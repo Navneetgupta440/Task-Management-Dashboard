@@ -44,7 +44,7 @@ export const ArchitectureDocsModal: React.FC<ArchitectureDocsModalProps> = ({
   onSuccessToast,
 }) => {
   const { token, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'architecture' | 'api' | 'raw_json' | 'scaling' | 'postman'>('api');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'api' | 'raw_json' | 'scaling' | 'postman' | 'vercel'>('api');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedEndpoints, setExpandedEndpoints] = useState<Record<string, boolean>>({
@@ -281,6 +281,19 @@ export const ArchitectureDocsModal: React.FC<ArchitectureDocsModalProps> = ({
             >
               <Download className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
               Postman Collection
+            </button>
+
+            <button
+              id="tab-btn-vercel"
+              onClick={() => setActiveTab('vercel')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                activeTab === 'vercel'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 shadow-xs border border-slate-200 dark:border-slate-700 font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
+              }`}
+            >
+              <Server className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              Vercel Deployment
             </button>
           </div>
 
@@ -758,6 +771,134 @@ export const ArchitectureDocsModal: React.FC<ArchitectureDocsModalProps> = ({
 
               <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl max-w-md mx-auto text-left text-[11px] text-slate-500 font-mono">
                 API Endpoint: <span className="text-slate-800 font-semibold">GET /api/v1/docs/postman</span>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: VERCEL DEPLOYMENT */}
+          {activeTab === 'vercel' && (
+            <div className="space-y-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold text-xs mb-2">
+                  <Server className="w-3.5 h-3.5" />
+                  Vercel Serverless Ready
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1">Deploying to Vercel</h3>
+                <p className="text-slate-600 text-xs leading-relaxed">
+                  This project is configured for 1-click zero-config deployment to Vercel with serverless Express API endpoints and optimized static Vite client assets.
+                </p>
+              </div>
+
+              {/* Architecture diagram on Vercel */}
+              <div className="p-4 rounded-xl bg-slate-900 text-white font-mono text-xs overflow-x-auto space-y-2">
+                <div className="text-slate-400 font-semibold mb-1">// Vercel Serverless & Static Distribution:</div>
+                <div className="text-emerald-400">Browser / Client ───&gt; Vercel Edge Network (Global CDN)</div>
+                <div className="text-indigo-300">├── Static Files: /* ───────────&gt; dist/ (Vite React 19 SPA)</div>
+                <div className="text-amber-300">└── API Requests: /api/* ───────&gt; Serverless Function (/api/index.ts)</div>
+                <div className="text-slate-400 pl-4">└── Express app handler (normalized paths, JWT auth, RBAC)</div>
+                <div className="text-purple-300 pl-8">└── PostgreSQL (Managed Neon / Supabase / Vercel PG or local /tmp)</div>
+              </div>
+
+              {/* Step-by-Step Deployment Instructions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+                  <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                    <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs">1</span>
+                    Via Vercel Web Dashboard (Git)
+                  </div>
+                  <ol className="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+                    <li>Push your code repository to <strong>GitHub</strong> or <strong>GitLab</strong>.</li>
+                    <li>Go to <a href="https://vercel.com/new" target="_blank" rel="noreferrer" className="text-indigo-600 font-bold underline">vercel.com/new</a> and click <strong>Import</strong>.</li>
+                    <li>
+                      Under <strong>Environment Variables</strong>, optionally add:
+                      <ul className="list-disc list-inside ml-4 mt-1 text-slate-700 font-mono text-[11px]">
+                        <li><code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">JWT_SECRET</code></li>
+                        <li><code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">DATABASE_URL</code> (Neon / Supabase)</li>
+                      </ul>
+                    </li>
+                    <li>Click <strong>Deploy</strong>. Vercel automatically detects the pre-configured <code className="bg-slate-100 px-1 rounded font-mono">vercel.json</code>!</li>
+                  </ol>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+                  <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                    <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">2</span>
+                    Via Vercel CLI (Terminal)
+                  </div>
+                  <div className="space-y-2 text-xs text-slate-600 leading-relaxed">
+                    <p>Run these commands directly in your local terminal:</p>
+                    <div className="p-3 bg-slate-950 text-slate-100 rounded-xl font-mono text-[11px] relative group">
+                      <pre className="overflow-x-auto">npm i -g vercel{"\n"}vercel --prod</pre>
+                      <button
+                        onClick={() => copyToClipboard('npm i -g vercel\nvercel --prod', 'vercel-cli-copy', 'CLI command')}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                        title="Copy command"
+                      >
+                        {copiedKey === 'vercel-cli-copy' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Follow the quick prompt to log in and select your project.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* vercel.json configuration preview */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Active vercel.json Configuration
+                  </h4>
+                  <button
+                    onClick={() => copyToClipboard(`{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "buildCommand": "npm run build:client",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}`, 'vercel-json-copy', 'vercel.json')}
+                    className="inline-flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:underline cursor-pointer"
+                  >
+                    {copiedKey === 'vercel-json-copy' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    Copy vercel.json
+                  </button>
+                </div>
+                <div className="p-4 bg-slate-950 text-slate-100 rounded-xl font-mono text-xs overflow-x-auto">
+                  <pre>{`{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "buildCommand": "npm run build:client",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}`}</pre>
+                </div>
               </div>
             </div>
           )}

@@ -64,6 +64,29 @@ npm start
 
 ---
 
+## ⚡ Deploying to Vercel (1-Click & Zero-Config)
+
+This application is fully pre-configured for deployment on **Vercel** as a hybrid architecture:
+- **Frontend**: Vite 6 React 19 SPA served via Vercel's global Edge CDN.
+- **Backend**: Express REST API endpoints (`/api/*`) executed via Vercel Serverless Functions (`api/index.ts`).
+- **Database**: Connects seamlessly to serverless PostgreSQL (e.g. Neon, Supabase, Vercel Postgres, AWS RDS) via `DATABASE_URL`, with automatic SSL enforcement and fallback support.
+
+### Option A: Via Vercel Dashboard (Recommended)
+1. Push your repository to GitHub or GitLab.
+2. Go to [vercel.com/new](https://vercel.com/new) and import the repository.
+3. In **Environment Variables**, add:
+   - `JWT_SECRET`: Any secure random secret (e.g., `openssl rand -hex 32`).
+   - `DATABASE_URL` (optional): PostgreSQL connection string from Neon / Supabase / Vercel Postgres.
+4. Click **Deploy**. Vercel will build the frontend using `npm run build:client` and deploy `/api/index.ts` automatically as configured in `vercel.json`.
+
+### Option B: Via Vercel CLI
+```bash
+npm install -g vercel
+vercel --prod
+```
+
+---
+
 ## 🔑 Demo Credentials (Pre-Seeded)
 
 For rapid testing and evaluation, the following demo accounts are pre-seeded in the PostgreSQL database:

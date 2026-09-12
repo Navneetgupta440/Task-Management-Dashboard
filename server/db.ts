@@ -4,14 +4,47 @@ import fs from 'fs';
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
 
-const dataDir = path.resolve(process.cwd(), 'data/postgres');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
 let pgliteInstance: PGlite | null = null;
 let pgPool: pg.Pool | null = null;
 let initialized = false;
+let initPromise: Promise<void> | null = null;
+
+function getDataDir(): string {
+  const isServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.NOW_REGION ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.LAMBDA_TASK_ROOT
+  );
+
+  if (isServerless) {
+    const tmpDir = path.resolve('/tmp', 'postgres');
+    try {
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+    } catch (e) {
+      console.warn('Could not create /tmp/postgres:', e);
+    }
+    return tmpDir;
+  }
+
+  try {
+    const localDir = path.resolve(process.cwd(), 'data/postgres');
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    return localDir;
+  } catch {
+    const tmpDir = path.resolve('/tmp', 'postgres');
+    try {
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+    } catch {}
+    return tmpDir;
+  }
+}
 
 export async function getDb() {
   const dbUrl = process.env.DATABASE_URL?.trim();
@@ -20,7 +53,12 @@ export async function getDb() {
   if (isValidPgUrl) {
     try {
       if (!pgPool) {
-        pgPool = new pg.Pool({ connectionString: dbUrl, connectionTimeoutMillis: 3000 });
+        const requiresSsl = !dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1');
+        pgPool = new pg.Pool({
+          connectionString: dbUrl,
+          connectionTimeoutMillis: 5000,
+          ssl: requiresSsl ? { rejectUnauthorized: false } : undefined,
+        });
       }
       return {
         query: async (text: string, params: any[] = []) => {
@@ -30,8 +68,15 @@ export async function getDb() {
           } catch (err) {
             console.warn('PostgreSQL external pool error, falling back to local PostgreSQL engine:', err);
             if (!pgliteInstance) {
-              pgliteInstance = new PGlite(dataDir);
-              await pgliteInstance.waitReady;
+              const dataDir = getDataDir();
+              try {
+                pgliteInstance = new PGlite(dataDir);
+                await pgliteInstance.waitReady;
+              } catch (pglErr) {
+                console.warn('PGlite directory error, using in-memory engine:', pglErr);
+                pgliteInstance = new PGlite();
+                await pgliteInstance.waitReady;
+              }
             }
             const res = await pgliteInstance.query(text, params);
             return { rows: res.rows, rowCount: res.rows.length };
@@ -44,8 +89,15 @@ export async function getDb() {
   }
 
   if (!pgliteInstance) {
-    pgliteInstance = new PGlite(dataDir);
-    await pgliteInstance.waitReady;
+    const dataDir = getDataDir();
+    try {
+      pgliteInstance = new PGlite(dataDir);
+      await pgliteInstance.waitReady;
+    } catch (pglErr) {
+      console.warn('PGlite directory error, using in-memory engine:', pglErr);
+      pgliteInstance = new PGlite();
+      await pgliteInstance.waitReady;
+    }
   }
 
   return {
@@ -63,6 +115,9 @@ export async function query(text: string, params: any[] = []) {
 
 export async function initDatabase() {
   if (initialized) return;
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
 
   const db = await getDb();
 
@@ -235,4 +290,7 @@ export async function initDatabase() {
   }
 
   initialized = true;
+  })();
+
+  return initPromise;
 }
