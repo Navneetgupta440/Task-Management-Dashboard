@@ -1,0 +1,8 @@
+{
+  "name": "Task Management Dashboard",
+  "description": "Full-stack authentication and task management dashboard featuring PostgreSQL, JWT authentication, bcrypt password hashing, and role-based access control.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
